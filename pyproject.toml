@@ -1,0 +1,79 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "cortex-ai"
+version = "2.4.0"
+description = "Synthetic cognition infrastructure for AI agents. Memory that thinks."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+authors = [
+    { name = "Atanasio Juarez", email = "ajuarez@aterna.ai" },
+]
+keywords = [
+    "ai",
+    "agents",
+    "memory",
+    "cognitive-architecture",
+    "hippocampus",
+    "dream-cycle",
+    "reconsolidation",
+    "pgvector",
+    "neuroscience",
+    "mcp",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "psycopg[binary]>=3.1",
+    "pgvector>=0.3",
+    "numpy>=1.24",
+    "httpx>=0.27",
+    "openai>=1.0",
+    "tiktoken>=0.7",
+    "pydantic>=2.0",
+    "python-dotenv>=1.0",
+    "click>=8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.5",
+    "mypy>=1.10",
+]
+ollama = [
+    "ollama>=0.3",
+]
+mcp = [
+    "mcp>=1.0",
+]
+
+[project.scripts]
+cortex = "cortex_ai.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Rezzyman/cortex-python"
+Documentation = "https://github.com/Rezzyman/cortex-python"
+Repository = "https://github.com/Rezzyman/cortex-python"
+Issues = "https://github.com/Rezzyman/cortex-python/issues"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
