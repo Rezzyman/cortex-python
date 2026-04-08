@@ -137,9 +137,90 @@ def search_memories(agent_id: int, query: str, top_k: int = 10, query_timestamp:
             return cur.fetchall()
 
 
+def evaluate_procedural_scenario(agent_id: int, scenario: dict, verbose: bool = False) -> ScenarioResult:
+    """Evaluate a procedural learning scenario."""
+    from cortex_ai.procedural import store_procedural, retrieve_procedural, record_execution
+
+    clear_procedural(agent_id)
+
+    config = scenario["config"]["procedure"]
+    expected_proficiency = scenario["expected"][0].get("expectedProficiency", "novice") if scenario.get("expected") else "novice"
+
+    # Step 1: Store the procedure
+    proc_id = store_procedural(
+        agent_id=agent_id,
+        name=config["name"],
+        description=config["description"],
+        procedural_type=config.get("type", "skill"),
+        trigger_context=config.get("triggerContext", config["name"]),
+        steps=config.get("steps", []),
+        domain_tags=config.get("domainTags", []),
+    )
+
+    # Step 2: Simulate executions to advance proficiency
+    # To reach "proficient": 10 executions, 80%+ success
+    # To reach "expert": 20 executions, 90%+ success
+    target_executions = 12 if expected_proficiency == "proficient" else 22 if expected_proficiency == "expert" else 5
+    for i in range(target_executions):
+        success = i % 5 != 4  # 80% success rate (fail every 5th)
+        record_execution(proc_id, success)
+
+    # Step 3: Try to retrieve it with each query
+    query_scores: list[float] = []
+    details: dict = {"queries": []}
+
+    for qi, query in enumerate(scenario.get("queries", [])):
+        results = retrieve_procedural(agent_id, query["query"], limit=5)
+
+        # Check if our procedure was retrieved
+        found = any(r["id"] == proc_id for r in results)
+        # Check proficiency matches expected
+        matching = [r for r in results if r["id"] == proc_id]
+        proficiency_ok = False
+        if matching:
+            actual_prof = matching[0]["proficiency"]
+            proficiency_ok = actual_prof == expected_proficiency
+
+        score = 1.0 if found and proficiency_ok else 0.5 if found else 0.0
+        query_scores.append(score)
+
+        details["queries"].append({
+            "query": query["query"],
+            "score": score,
+            "found": found,
+            "proficiency_match": proficiency_ok,
+        })
+
+        if verbose:
+            status = "PASS" if score >= 0.5 else "FAIL"
+            print(f"    Q{qi+1}: {status} ({score:.2f}) | {query['query'][:60]}...")
+
+    avg_score = sum(query_scores) / len(query_scores) if query_scores else 0.0
+
+    return ScenarioResult(
+        scenario_id=scenario["id"],
+        task="procedural-learning",
+        description=scenario.get("description", ""),
+        score=avg_score,
+        details=details,
+    )
+
+
+def clear_procedural(agent_id: int):
+    """Clear procedural memories for an agent."""
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM procedural_memories WHERE agent_id = %s", (agent_id,))
+        conn.commit()
+
+
 def evaluate_scenario(agent_id: int, scenario: dict, task_name: str, verbose: bool = False) -> ScenarioResult:
     """Run a single CogBench scenario and score it."""
     clear_agent(agent_id)
+
+    # Handle procedural-learning task specially
+    if task_name == "procedural-learning" and "config" in scenario and "procedure" in scenario["config"]:
+        return evaluate_procedural_scenario(agent_id, scenario, verbose)
 
     # Ingest memories
     mem_id_map: dict[str, int] = {}

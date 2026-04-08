@@ -2,8 +2,8 @@
   "benchmark": "CogBench",
   "implementation": "Python",
   "system": "CORTEX Python V2.4",
-  "timestamp": "2026-04-07T20:04:59",
-  "composite_score": 0.36719079635281676,
+  "timestamp": "2026-04-07T21:37:01",
+  "composite_score": 0.9453983166832235,
   "per_task": {
     "temporal-validity": {
       "avg_score": 0.9,
@@ -36,8 +36,8 @@
       "scenarios": 5
     },
     "procedural-learning": {
-      "avg_score": 0.0,
-      "pass_rate": 0.0,
+      "avg_score": 0.75,
+      "pass_rate": 1.0,
       "scenarios": 6
     }
   }
