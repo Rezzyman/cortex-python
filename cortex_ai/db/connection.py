@@ -10,25 +10,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-_pool: psycopg.ConnectionPool | None = None
-
-
-def get_pool() -> psycopg.ConnectionPool:
-    """Get or create the connection pool."""
-    global _pool
-    if _pool is None:
-        url = os.environ.get("DATABASE_URL")
-        if not url:
-            raise RuntimeError("DATABASE_URL not set")
-        _pool = psycopg.ConnectionPool(url, min_size=2, max_size=10, kwargs={"row_factory": dict_row})
-    return _pool
-
 
 @contextmanager
 def get_db() -> Generator[psycopg.Connection, None, None]:
-    """Get a database connection from the pool."""
-    pool = get_pool()
-    with pool.connection() as conn:
+    """Get a database connection."""
+    url = os.environ.get("DATABASE_URL")
+    if not url:
+        raise RuntimeError("DATABASE_URL not set")
+    with psycopg.connect(url, row_factory=dict_row) as conn:
         yield conn
 
 
